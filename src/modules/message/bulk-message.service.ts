@@ -23,6 +23,23 @@ interface BulkMessageContent {
   document?: { url?: string; base64?: string; mimetype?: string; filename?: string };
 }
 
+/**
+ * Resolve a batch's terminal status, in precedence order:
+ *  - cancelled (cancelBatch flipped the flag) → CANCELLED. Must win over the in-memory PROCESSING
+ *    status set at the start of processBatch, which would otherwise be saved back over the cancellation.
+ *  - stopped on the first error (stopOnError) → FAILED, even if some messages were already sent.
+ *  - otherwise → COMPLETED, or FAILED only when every attempt failed.
+ */
+export function resolveFinalBatchStatus(
+  cancelled: boolean,
+  stoppedOnError: boolean,
+  progress: Pick<BatchProgress, 'sent' | 'failed'>,
+): BatchStatus {
+  if (cancelled) return BatchStatus.CANCELLED;
+  if (stoppedOnError) return BatchStatus.FAILED;
+  return progress.failed > 0 && progress.sent === 0 ? BatchStatus.FAILED : BatchStatus.COMPLETED;
+}
+
 @Injectable()
 export class BulkMessageService implements OnApplicationBootstrap {
   private readonly logger = new Logger(BulkMessageService.name);
@@ -164,6 +181,7 @@ export class BulkMessageService implements OnApplicationBootstrap {
     }
 
     const results: BatchMessageResult[] = batch.results || [];
+    let stoppedOnError = false;
 
     for (let i = batch.currentIndex; i < batch.messages.length; i++) {
       // Check for cancellation
@@ -205,6 +223,7 @@ export class BulkMessageService implements OnApplicationBootstrap {
 
         if (batch.options.stopOnError) {
           batch.status = BatchStatus.FAILED;
+          stoppedOnError = true;
           results.push(result);
           break;
         }
@@ -226,10 +245,14 @@ export class BulkMessageService implements OnApplicationBootstrap {
       }
     }
 
-    // Final update
-    if (this.processingBatches.get(batch.id)) {
-      batch.status =
-        batch.progress.failed > 0 && batch.progress.sent === 0 ? BatchStatus.FAILED : BatchStatus.COMPLETED;
+    // Final update. NOTE: `batch` still holds the in-memory PROCESSING status from the start, so a
+    // cancellation persisted by cancelBatch would be overwritten if we saved without re-deriving it.
+    const cancelled = !this.processingBatches.get(batch.id);
+    batch.status = resolveFinalBatchStatus(cancelled, stoppedOnError, batch.progress);
+    if (cancelled) {
+      // Reconcile the counters the same way cancelBatch does, so the persisted state is consistent.
+      batch.progress.cancelled = batch.progress.pending;
+      batch.progress.pending = 0;
     }
     batch.completedAt = new Date();
     batch.results = results;

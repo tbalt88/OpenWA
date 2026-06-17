@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
+  IsIn,
   IsArray,
   IsOptional,
   IsNumber,
@@ -46,7 +47,7 @@ class BulkMessageItemDto {
   chatId: string;
 
   @ApiProperty({ description: 'Message type', enum: ['text', 'image', 'video', 'audio', 'document'] })
-  @IsString()
+  @IsIn(['text', 'image', 'video', 'audio', 'document'])
   type: 'text' | 'image' | 'video' | 'audio' | 'document';
 
   @ApiProperty({ description: 'Message content based on type' })

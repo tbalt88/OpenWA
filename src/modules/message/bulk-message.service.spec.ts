@@ -1,8 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BulkMessageService } from './bulk-message.service';
+import { BulkMessageService, resolveFinalBatchStatus } from './bulk-message.service';
 import { MessageBatch, BatchStatus } from './entities/message-batch.entity';
 import { SessionService } from '../session/session.service';
+
+/** Regression lock for the terminal-status decision (cancel-clobber + stopOnError overwrite bugs). */
+describe('resolveFinalBatchStatus', () => {
+  it('CANCELLED wins even when messages were sent/failed (no clobber back to PROCESSING/COMPLETED)', () => {
+    expect(resolveFinalBatchStatus(true, false, { sent: 3, failed: 1 })).toBe(BatchStatus.CANCELLED);
+  });
+
+  it('cancellation takes precedence over stop-on-error', () => {
+    expect(resolveFinalBatchStatus(true, true, { sent: 0, failed: 1 })).toBe(BatchStatus.CANCELLED);
+  });
+
+  it('stopOnError → FAILED even when some messages already sent (not COMPLETED)', () => {
+    expect(resolveFinalBatchStatus(false, true, { sent: 5, failed: 1 })).toBe(BatchStatus.FAILED);
+  });
+
+  it('all attempts failed → FAILED', () => {
+    expect(resolveFinalBatchStatus(false, false, { sent: 0, failed: 4 })).toBe(BatchStatus.FAILED);
+  });
+
+  it('some sent (with or without failures) → COMPLETED', () => {
+    expect(resolveFinalBatchStatus(false, false, { sent: 4, failed: 0 })).toBe(BatchStatus.COMPLETED);
+    expect(resolveFinalBatchStatus(false, false, { sent: 3, failed: 1 })).toBe(BatchStatus.COMPLETED);
+  });
+});
 
 /** Regression lock: orphaned (restart-interrupted) PROCESSING batches are transitioned. */
 describe('BulkMessageService.onApplicationBootstrap', () => {
