@@ -2,6 +2,8 @@ import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus }
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { GroupService } from './group.service';
 import { CreateGroupDto, ParticipantsDto, GroupSubjectDto, GroupDescriptionDto } from './dto/group.dto';
+import { RequireRole } from '../auth/decorators/auth.decorators';
+import { ApiKeyRole } from '../auth/entities/api-key.entity';
 
 @ApiTags('groups')
 @Controller('sessions/:sessionId/groups')
@@ -27,6 +29,7 @@ export class GroupController {
   }
 
   @Post()
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Create a new group' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiBody({ type: CreateGroupDto })
@@ -36,6 +39,7 @@ export class GroupController {
   }
 
   @Post(':groupId/participants')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Add participants to a group' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -52,6 +56,7 @@ export class GroupController {
   }
 
   @Delete(':groupId/participants')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Remove participants from a group' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -67,6 +72,7 @@ export class GroupController {
   }
 
   @Post(':groupId/participants/promote')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Promote participants to admin' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -83,6 +89,7 @@ export class GroupController {
   }
 
   @Post(':groupId/participants/demote')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Demote participants from admin' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -99,6 +106,7 @@ export class GroupController {
   }
 
   @Put(':groupId/subject')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Change group name/subject' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -114,6 +122,7 @@ export class GroupController {
   }
 
   @Put(':groupId/description')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Change group description' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -129,6 +138,7 @@ export class GroupController {
   }
 
   @Post(':groupId/leave')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Leave a group' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
@@ -155,6 +165,7 @@ export class GroupController {
   }
 
   @Post(':groupId/invite-code/revoke')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke group invite code and generate new one' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })

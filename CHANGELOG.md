@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Write endpoints for groups, contacts, labels, channels, catalog, and status now require the
+  `OPERATOR` role**, closing an unintended privilege gap where a `VIEWER`-role API key could create/leave
+  groups, manage participants, block contacts, post statuses, send products, and mutate labels. Read
+  (`GET`) endpoints remain open to any valid key, matching the message/session controllers.
+  > ⚠️ If you used a `VIEWER` key for any of these write operations, switch it to `OPERATOR` (or `ADMIN`).
+
 ## [0.2.8] - 2026-06-17
 
 The engine-pluggability release: the whatsapp-web.js delivery-ack, message-type, and JID specifics are

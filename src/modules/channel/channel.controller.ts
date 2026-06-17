@@ -2,6 +2,8 @@ import { Controller, Get, Post, Delete, Param, Body, Query } from '@nestjs/commo
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { ChannelService } from './channel.service';
 import { SubscribeChannelDto } from './dto/subscribe-channel.dto';
+import { RequireRole } from '../auth/decorators/auth.decorators';
+import { ApiKeyRole } from '../auth/entities/api-key.entity';
 
 @ApiTags('channels')
 @Controller('sessions/:sessionId/channels')
@@ -51,6 +53,7 @@ export class ChannelController {
   }
 
   @Post('subscribe')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Subscribe to a channel using invite code' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiBody({
@@ -75,6 +78,7 @@ export class ChannelController {
   }
 
   @Delete(':channelId')
+  @RequireRole(ApiKeyRole.OPERATOR)
   @ApiOperation({ summary: 'Unsubscribe from a channel' })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiParam({ name: 'channelId', description: 'Channel ID to unsubscribe from' })
