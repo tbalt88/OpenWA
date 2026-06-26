@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-06-26
+
 ### Changed
 
 - CI now runs the dashboard unit tests, and re-runs the client-SDK suites when a server DTO or the engine interface changes (not only on SDK edits), so contract drift is caught at its source. (#478)
